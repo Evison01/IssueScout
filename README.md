@@ -51,4 +51,8 @@ test/            API and server tests using Node's built-in test runner
 - Repository activity signals and richer issue details
 - Contribution reminders and personalized discovery
 
-Phase one intentionally has no account system, database, automated recommendations, or production hosting. The server binds to localhost for development. Public deployment will need appropriate hosting, request throttling, and secret configuration.
+Phase one intentionally has no account system, database, or automated recommendations. The server binds to localhost for development. Public deployment will need appropriate hosting, request throttling, and secret configuration.
+
+## Vercel deployment
+
+Import this repository into Vercel. The tracked `vercel.json` serves `public/` as static assets and runs `/api/issues` as a Node.js function using the same handler as the local server. No dependencies or database are required. Optionally set `GITHUB_TOKEN` in the Vercel project environment and redeploy to increase GitHub API limits. Unauthenticated searches share the deployment’s outbound GitHub rate limit. Bookmarks remain local to each browser and origin.

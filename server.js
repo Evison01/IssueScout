@@ -11,8 +11,8 @@ export function searchParameters(params) {
   const page = Math.min(50, Math.max(1, Number.parseInt(params.get('page'), 10) || 1));
   return new URLSearchParams({ q: [query, 'is:issue', 'is:open', 'archived:false', language && `language:"${language}"`, label && `label:"${label}"`].filter(Boolean).join(' '), sort, order: 'desc', per_page: '20', page: String(page) });
 }
-export function createApp({ fetcher = fetch, token = process.env.GITHUB_TOKEN } = {}) {
-  return createServer(async (req, res) => {
+export function createHandler({ fetcher = fetch, token = process.env.GITHUB_TOKEN } = {}) {
+  return async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'no-referrer');
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; frame-ancestors 'none'");
@@ -34,7 +34,10 @@ export function createApp({ fetcher = fetch, token = process.env.GITHUB_TOKEN } 
       const body = await readFile(new URL(`./public/${asset[0]}`, import.meta.url));
       res.writeHead(200, { 'Content-Type': `${asset[1]}; charset=utf-8` }); res.end(body);
     } catch (error) { json(502, { error: error.name === 'TimeoutError' ? 'GitHub took too long. Please retry.' : 'Unable to load issues. Check your connection and retry.' }); }
-  });
+  };
+}
+export function createApp(options = {}) {
+  return createServer(createHandler(options));
 }
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const port = Number(process.env.PORT) || 3000;
