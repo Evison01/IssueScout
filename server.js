@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import account from './lib/account.js';
 
 const assets = new Map([['/', ['index.html', 'text/html']], ['/app.js', ['app.js', 'text/javascript']], ['/style.css', ['style.css', 'text/css']]]);
 export function searchParameters(params) {
@@ -9,7 +10,7 @@ export function searchParameters(params) {
   const label = (params.get('label') || '').replace(/["\\\r\n]/g, '').slice(0, 60);
   const sort = ['updated', 'created', 'comments'].includes(params.get('sort')) ? params.get('sort') : 'updated';
   const page = Math.min(50, Math.max(1, Number.parseInt(params.get('page'), 10) || 1));
-  return new URLSearchParams({ q: [query, 'is:issue', 'is:open', 'archived:false', language && `language:"${language}"`, label && `label:"${label}"`].filter(Boolean).join(' '), sort, order: 'desc', per_page: '20', page: String(page) });
+  return new URLSearchParams({ q: [query, 'is:public', 'is:issue', 'is:open', 'archived:false', language && `language:"${language}"`, label && `label:"${label}"`].filter(Boolean).join(' '), sort, order: 'desc', per_page: '20', page: String(page) });
 }
 export function createHandler({ fetcher = fetch, token = process.env.GITHUB_TOKEN } = {}) {
   return async (req, res) => {
@@ -18,8 +19,9 @@ export function createHandler({ fetcher = fetch, token = process.env.GITHUB_TOKE
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; frame-ancestors 'none'");
     const json = (status, value) => { res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(value)); };
     try {
-      if (req.method !== 'GET') return json(405, { error: 'Method not allowed.' });
       const url = new URL(req.url, 'http://localhost');
+      if (url.pathname === '/api/account') return await account(req, res);
+      if (req.method !== 'GET') return json(405, { error: 'Method not allowed.' });
       if (url.pathname === '/api/issues') {
         const response = await fetcher(`https://api.github.com/search/issues?${searchParameters(url.searchParams)}`, { headers: { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'IssueScout', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, signal: AbortSignal.timeout(12000) });
         if (!response.ok) {

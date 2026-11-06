@@ -1,9 +1,19 @@
 {
   "name": "issuescout",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Find your next open-source contribution.",
-  "engines": { "node": ">=22" },
-  "scripts": { "start": "node --env-file-if-exists=.env server.js", "dev": "node --watch --env-file-if-exists=.env server.js", "test": "node --test", "check": "node --check server.js && node --check public/app.js" }
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "dev": "node --watch --env-file-if-exists=.env server.js",
+    "test": "node --test",
+    "check": "node --check server.js && node --check public/app.js && node --check lib/account.js && node --check api/account.js"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
 }

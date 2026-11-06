@@ -13,11 +13,12 @@ Find your next open-source contribution. Search live public GitHub issues, save 
 
 ## Run locally
 
-Requires **Node.js 22 or later**. No third-party packages or installation needed.
+Requires **Node.js 22 or later**. GitHub search and browser bookmarks work without account setup.
 
 ```sh
 git clone https://github.com/Evison01/IssueScout.git
 cd IssueScout
+npm ci
 npm start
 ```
 
@@ -34,7 +35,7 @@ npm run check
 
 The browser calls `GET /api/issues?q=accessibility&language=TypeScript&label=good+first+issue&sort=updated&page=1`. The Node server queries GitHub's [issue search API](https://docs.github.com/en/rest/search#search-issues-and-pull-requests), limits page sizes, and returns normalized issue data. Search is restricted to open issues in repositories that are not archived. GitHub search exposes at most 1,000 results per query; refine your filters for more focused results.
 
-Saved issues and their progress live in this browser's local storage. They do not sync across devices; clearing browser data removes them. Issue snapshots refresh only when rediscovered through search. Progress is a personal tracker and does not modify GitHub issues. An updated issue is an activity signal, not a guarantee of maintainer responsiveness.
+Guests save issues and progress in browser storage. Signed-in users save to PostgreSQL and can refresh their shortlist to pull changes from another device. **Import browser bookmarks** copies guest bookmarks into the account and preserves any progress already saved there. Guest and account bookmarks are stored separately. Progress changes are private to IssueScout.
 
 ## Project layout
 
@@ -44,15 +45,22 @@ server.js        Static server and GitHub search proxy
 test/            API and server tests using Node's built-in test runner
 ```
 
-## Next phases
+## Phase two setup
 
-- GitHub OAuth and synced bookmarks
-- PostgreSQL persistence and user accounts
-- Repository activity signals and richer issue details
-- Contribution reminders and personalized discovery
+GitHub sign-in uses a GitHub OAuth app. IssueScout requests public profile information and uses the GitHub account ID to identify each user. The GitHub access token is discarded after profile lookup. IssueScout sessions expire after seven days and can be ended by signing out.
 
-Phase one intentionally has no account system, database, or automated recommendations. The server binds to localhost for development. Public deployment will need appropriate hosting, request throttling, and secret configuration.
+1. In the IssueScout Vercel dashboard, connect a new PostgreSQL database through the [Vercel Marketplace](https://vercel.com/docs/postgres). Select a plan and connect the database to the project. Make its pooled connection URL available as `DATABASE_URL` in Production. The database role needs permission to create the IssueScout tables and indexes. The first successful sign-in initializes them automatically.
+2. [Register a GitHub OAuth app](https://github.com/settings/applications/new). Use `https://issuescout-psi.vercel.app` as the homepage and `https://issuescout-psi.vercel.app/api/account?action=callback` as the authorization callback URL.
+3. In Vercel, set `APP_ORIGIN=https://issuescout-psi.vercel.app`, `GITHUB_CLIENT_ID`, and `GITHUB_CLIENT_SECRET` for Production. Enter the generated secret directly in Vercel.
+4. Redeploy. Open the production URL, sign in, and save an issue. Sign in on a second browser with the same GitHub account to verify the shortlist syncs.
+
+For local OAuth testing, use a separate OAuth app registered to `http://localhost:3000/api/account?action=callback` and put the values in a local `.env` based on `.env.example`. Use a separate development database.
 
 ## Vercel deployment
 
-Import this repository into Vercel. The tracked `vercel.json` serves `public/` as static assets and runs `/api/issues` as a Node.js function using the same handler as the local server. No dependencies or database are required. Optionally set `GITHUB_TOKEN` in the Vercel project environment and redeploy to increase GitHub API limits. Unauthenticated searches share the deployment’s outbound GitHub rate limit. Bookmarks remain local to each browser and origin.
+`vercel.json` serves `public/` and runs the search and account endpoints as Node.js functions. Optionally set `GITHUB_TOKEN` in Vercel to increase the GitHub search rate limit. Account sync is enabled when its four environment variables are present.
+
+## Next phases
+
+- Repository activity signals and richer issue details
+- Contribution reminders and personalized discovery

@@ -3,7 +3,7 @@
   "framework": null,
   "buildCommand": "npm run check",
   "outputDirectory": "public",
-  "functions": { "api/issues.js": { "maxDuration": 20 } },
+  "functions": { "api/issues.js": { "maxDuration": 20 }, "api/account.js": { "maxDuration": 30 } },
   "headers": [{
     "source": "/(.*)",
     "headers": [
